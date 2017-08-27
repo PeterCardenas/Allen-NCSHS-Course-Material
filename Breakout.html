@@ -9,8 +9,8 @@ var fps = 30;
 
 var ballX;
 var ballY;
-var ballSpeedX = 2;
-var ballSpeedY = 2;
+var ballSpeedX = 10;
+var ballSpeedY = 10;
 var ballRadius = 10;
 var ballOffsetX = 0;
 var ballOffsetY = -50;
@@ -50,30 +50,31 @@ class Block {
 			colorRect(this.left, this.top, this.width, this.height, this.color);
 		}
 	}
-	checkNearBall() {
-		return Math.abs(ballX - this.left + this.width / 2) <= this.checkOffset && Math.abs(ballY - this.top + this.height / 2) <= this.checkOffset;
-	}
 	collideBall() {
-    		var dx;
-	    	var dy;
-		var right;
-		var below;
-		if (ball
-    		var width = this.width / 2;
-	    	var height = this.height / 2;
-    		var crossXProp = Math.abs(dy) / width;
-	    	var crossYProp = Math.abs(dx) / height;
-    		var collision = 'none';
-		//console.log(crossXProp, crossYProp);
-	    	if (dx <= 0 && dy <= 0) {
-        		if (crossXProp <= crossYProp) {
-            			collision = !right ? 'left' : 'right';
-        		} else {
-            			collision = !below ? 'bottom' : 'top';
-        		}
-    		}
-		//console.log(collision);
-    		return (collision);
+    		if (ballX >= this.left && ballX <= this.left + this.width) {
+			if (ballY + ballRadius >= this.top) {
+				if (ballY + ballRadius - ballSpeedY < this.top) {
+					return 'top';
+				}
+			}
+			if (ballY - ballRadius <= this.top + this.height) {
+				if (ballY - ballRadius - ballSpeedY > this.top + this.height) {
+					return 'bottom';
+				}
+			}
+		}
+		if (ballY >= this.top && ballY <= this.top + this.height) {
+			if (ballX + ballRadius >= this.left) {
+				if (ballX + ballRadius - ballSpeedX < this.left) {
+					return 'left';
+				}
+			}
+			if (ballY - ballRadius <= this.top + this.height) {
+				if (ballX - ballRadius - ballSpeedX > this.left + this.width) {
+					return 'right';
+				}
+			}
+		}
 	}
 }
 
@@ -151,8 +152,7 @@ function move() {
 		ballSpeedX *= -1;
 	}
 	blocks.forEach(function(item, index, array) {
-		if (!item.isBroken && item.checkNearBall()) {
-			//console.log("Is near block", index);
+		if (!item.isBroken) {
 			switch (item.collideBall()) {
 				case 'left':
 				case 'right':
