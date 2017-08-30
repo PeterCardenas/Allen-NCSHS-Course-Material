@@ -5,9 +5,14 @@
 <script type = "text/javascript">
 var canvas;
 var canvasContext;
+var fps = 30;var canvas;
+var canvasContext;
 var fps = 30;
 
 var player;
+
+var enemy1;
+var enemy1Frames = 2;
 
 class SpaceShip {
 	constructor() {
@@ -42,20 +47,19 @@ class Bullet {
 }
 
 class Enemy {
-	constructor(left, top, width, height, picture) {
+	constructor(left, top, width, height, pictures) {
 		this.tag = 'Enemy';
 		this.left = left;
 		this.top = top;
 		this.width = width;
 		this.height = height;
-		this.drawing = new Image();
-		this.drawing.src = picture;
+		this.currPict = pictures[0];
 	}
 	draw() {
 		canvasContext.drawImage(drawing, this.left, this.top, this.width, this.height);
 	}
 	collisionDetect(obj) {
-		if (obj.left + obj.width / 2 >= this.left && obj.x +  <= this.left + this.width) {
+		if (obj.left + obj.width / 2 >= this.left && obj.left + obj.width / 2 <= this.left + this.width) {
 			if (ballY + ballRadius >= this.top) {
 				if (ballY + ballRadius - ballSpeedY < this.top) {
 					return 'top';
@@ -86,20 +90,43 @@ class Enemy {
 function init() {
 	canvas = document.getElementById('gameCanvas');
 	canvasContext = canvas.getContext('2d');
-	player = new SpaceShip();
+	enemy1 = new Array(0);
+	for(i = 0; i < enemy1Frames; i++){
+		enemy1.push("enemy 1 f" + (i + 1) + ".png");
+	}
+	colorRect(0, 0, canvas.width, canvas.height, 'black');
+	drawImage(0, 0, 50, 50, enemy1[0]);
+	setInterval(doFrame, 1000 / fps);
 }
 
 window.onload = init;
 	
+function doFrame() {
+	move();
+	draw();
+}
+
+function draw() {
+
+}
+
+function move() {
+
+}
+  
 function colorRect(leftX, topY, width, height, drawColor) {
 	canvasContext.fillStyle = drawColor;
 	canvasContext.fillRect(leftX, topY, width, height);
 }
 	
-function drawImage(left, top, width, height) {
-	
+function drawImage(left, top, width, height, image) {
+	var drawing = new Image();
+ 	drawing.src = image;
+	drawing.onload = function() {
+		canvasContext.drawImage(drawing, left, top, width, height);
+	};
 }
-	
+
 </script>
 
 </html>
