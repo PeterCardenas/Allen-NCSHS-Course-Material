@@ -5,15 +5,16 @@
 <script type = "text/javascript">
 var canvas;
 var canvasContext;
-var fps = 30;
+var fps = 10;
 var currFrame = 0;
+var frameShot = -1;
 
 var player;
 var playerImage = "player ship.png";
 var playerStartX = 0;
 var playerStartY = 0;
 var playerWidth = 75;
-var playerHeight = 20;
+var playerHeight = 100;
 	
 var bulletsOnScreen;
 var bulletWidth = 5;
@@ -105,6 +106,7 @@ function init() {
 	bulletsOnScreen = new Array(0); 
 	setInterval(doFrame, 1000 / fps);
 	canvas.addEventListener('mousemove', mouseMoveHandler);
+	canvas.addEventListener('click', clickHandler);
 	canvas.addEventListener('keydown', keyDownHandler);
 	canvas.addEventListener('keyup', keyUpHander);
 }
@@ -139,9 +141,14 @@ function draw() {
 			bulletsOnScreen[i].draw();
 		}
 	}
+	console.log(bulletsOnScreen.length);
 }
 
 function move() {
+	
+}
+
+function clickHandler(e) {
 	
 }
 	
@@ -149,6 +156,7 @@ function keyDownHandler(e) {
 	switch(e.keyCode) {
 		case 32:
 			player.isShoot = true;
+			console.log('spacebar pressed');
 			break;
 	}
 }
