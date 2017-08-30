@@ -15,7 +15,7 @@ var playerStartY = 0;
 var playerWidth = 75;
 var playerHeight = 20;
 	
-var bullet;
+var bulletsOnScreen;
 var bulletWidth = 5;
 var bulletHeight = 20;
 
@@ -55,12 +55,12 @@ class Bullet {
 		this.width = width;
 		this.height = height;
 		this.color = color;
-		this.speedY = -1;
+		this.speedY = -15;
 		this.speedX = 0;
 		this.hit = false;
 	}
 	draw() {
-		if(!this.hit){
+		if(!this.hit) {
 			colorRect(this.left, this.top, this.width, this.height, this.color);
 		}
 	}
@@ -93,12 +93,16 @@ function init() {
 	canvasContext = canvas.getContext('2d');
 	enemy1Frames = new Array(0);
 	barrierFrames = new Array(0);
+	playerStartX = canvas.width / 2 - playerWidth / 2;
+	playerStartY = canvas.height - playerHeight;
+	player = new SpaceShip(playerStartX, playerStartY, playerWidth, playerHeight, playerImage);
 	for(i = 0; i < enemy1NumFrames; i++){
 		enemy1Frames.push("enemy 1 f" + (i + 1) + ".png");
 	}
 	for(i = 0; i < barrierNumFrames; i++) {
 		barrierFrames.push("barrier f" + (i + 1) + ".png");
 	}
+	bulletsOnScreen = new Array(0); 
 	setInterval(doFrame, 1000 / fps);
 	canvas.addEventListener('mousemove', mouseMoveHandler);
 	canvas.addEventListener('keydown', keyDownHandler);
@@ -117,10 +121,23 @@ function draw() {
 	if(currFrame > 30) {
 		currFrame -= 30;	
 	}
+	for(i = 0; i < bulletsOnScreen.length; i++){
+		bulletsOnScreen[i].left += bulletsOnScreen[i].speedX;
+		bulletsOnScreen[i].top += bulletsOnScreen[i].speedY;
+	}
 	colorRect(0, 0, canvas.width, canvas.height, 'black');
 	player.draw();
 	if(player.isShoot && currFrame % 15 == 0) {
-		bullet = new Bullet(player.left + player.width / 2 - bulletWidth / 2, player.top, bulletWidth, bulletHeight, 'white');	
+		bulletsOnScreen.push(new Bullet(player.left + player.width / 2 - bulletWidth / 2, player.top, bulletWidth, bulletHeight, 'white'));	
+	}
+	for(i = 0; i < bulletsOnScreen.length; i++){
+		if(bulletsOnScreen[i].hit || bulletsOnScreen[i].top + bulletsOnScreen[i].height < 0) {
+			bulletsOnScreen.splice(i);
+			i--;
+		}
+		else{
+			bulletsOnScreen[i].draw();
+		}
 	}
 }
 
@@ -139,7 +156,7 @@ function keyDownHandler(e) {
 function keyUpHandler(e) {
 	switch(e.keyCode) {
 		case 32:
-			player.isShoot = true;
+			player.isShoot = false;
 			break;
 	}
 }
