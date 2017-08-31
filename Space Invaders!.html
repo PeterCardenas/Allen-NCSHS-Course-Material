@@ -5,10 +5,9 @@
 <script type = "text/javascript">
 var canvas;
 var canvasContext;
-var fps = 10;
+var fps = 30;
 var currFrame = 0;
 var frameShot = -1;
-
 var player;
 var playerImage = "player ship.png";
 var playerStartX = 0;
@@ -19,7 +18,6 @@ var playerHeight = 100;
 var bulletsOnScreen;
 var bulletWidth = 5;
 var bulletHeight = 20;
-
 var enemy1;
 var enemy1Frames;
 var enemy1NumFrames = 2;
@@ -27,7 +25,6 @@ var enemy1NumFrames = 2;
 var barrier;
 var barrierFrames;
 var barrierNumFrames = 5;
-
 class SpaceShip {
 	constructor(left, top, width, height, picture) {
 		this.tag = 'Enemy';
@@ -47,7 +44,6 @@ class SpaceShip {
 		return collisionRect(this, obj);
 	}
 }
-
 class Bullet {
 	constructor(left, top, width, height, color) {
 		this.tag = 'Bullet';
@@ -69,7 +65,6 @@ class Bullet {
 		return collisionRect(this, obj);
 	}
 }
-
 class Enemy {
 	constructor(left, top, width, height, pictures) {
 		this.tag = 'Enemy';
@@ -88,7 +83,6 @@ class Enemy {
 		return collisionRect(this, obj);
 	}
 }
-
 function init() {
 	canvas = document.getElementById('gameCanvas');
 	canvasContext = canvas.getContext('2d');
@@ -106,22 +100,18 @@ function init() {
 	bulletsOnScreen = new Array(0); 
 	setInterval(doFrame, 1000 / fps);
 	canvas.addEventListener('mousemove', mouseMoveHandler);
-	canvas.addEventListener('click', clickHandler);
-	canvas.addEventListener('keydown', keyDownHandler);
-	canvas.addEventListener('keyup', keyUpHander);
+	window.addEventListener('keydown', keyDownHandler, false);
+	window.addEventListener('keyup', keyUpHandler, false);
 }
-
-window.onload = init;
 	
 function doFrame() {
 	move();
 	draw();
 }
-
 function draw() {
 	currFrame++;
-	if(currFrame > 30) {
-		currFrame -= 30;	
+	if(currFrame > fps) {
+		currFrame -= fps;	
 	}
 	for(i = 0; i < bulletsOnScreen.length; i++){
 		bulletsOnScreen[i].left += bulletsOnScreen[i].speedX;
@@ -129,26 +119,26 @@ function draw() {
 	}
 	colorRect(0, 0, canvas.width, canvas.height, 'black');
 	player.draw();
-	if(player.isShoot && currFrame % 15 == 0) {
-		bulletsOnScreen.push(new Bullet(player.left + player.width / 2 - bulletWidth / 2, player.top, bulletWidth, bulletHeight, 'white'));	
+	if(player.isShoot) {
+		if(frameShot == -1) {
+			frameShot = currFrame;
+			bulletsOnScreen.push(new Bullet(player.left + player.width / 2 - bulletWidth / 2, player.top, bulletWidth, bulletHeight, 'white'));
+		} else if (((currFrame + fps) - frameShot) % (fps / 2) == 0) {
+			bulletsOnScreen.push(new Bullet(player.left + player.width / 2 - bulletWidth / 2, player.top, bulletWidth, bulletHeight, 'white'));	
+		}
 	}
+	//console.log(currFrame, frameShot);
 	for(i = 0; i < bulletsOnScreen.length; i++){
 		if(bulletsOnScreen[i].hit || bulletsOnScreen[i].top + bulletsOnScreen[i].height < 0) {
-			bulletsOnScreen.splice(i);
+			bulletsOnScreen.splice(i, 1);
 			i--;
 		}
 		else{
 			bulletsOnScreen[i].draw();
 		}
 	}
-	console.log(bulletsOnScreen.length);
 }
-
 function move() {
-	
-}
-
-function clickHandler(e) {
 	
 }
 	
@@ -156,7 +146,6 @@ function keyDownHandler(e) {
 	switch(e.keyCode) {
 		case 32:
 			player.isShoot = true;
-			console.log('spacebar pressed');
 			break;
 	}
 }
@@ -165,6 +154,7 @@ function keyUpHandler(e) {
 	switch(e.keyCode) {
 		case 32:
 			player.isShoot = false;
+			frameShot = -1;
 			break;
 	}
 }
@@ -179,7 +169,6 @@ function mouseMoveHandler(e){
 		player.left = mousePos.x - player.width / 2;
 	}
 }
-
 function calculateMousePos(e) {
 	var rect = canvas.getBoundingClientRect();
 	var root = document.documentElement;
@@ -232,6 +221,7 @@ function drawImage(left, top, width, height, image) {
 	};
 }
 
+window.onload = init;
 </script>
 
 </html>
