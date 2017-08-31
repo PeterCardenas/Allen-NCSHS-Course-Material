@@ -99,7 +99,6 @@ function init() {
 	}
 	bulletsOnScreen = new Array(0); 
 	setInterval(doFrame, 1000 / fps);
-	canvas.addEventListener('mousemove', mouseMoveHandler);
 	window.addEventListener('keydown', keyDownHandler, false);
 	window.addEventListener('keyup', keyUpHandler, false);
 }
@@ -113,6 +112,8 @@ function draw() {
 	if(currFrame > fps) {
 		currFrame -= fps;	
 	}
+	player.left += player.speedX;
+	player.top += player.speedY;
 	for(i = 0; i < bulletsOnScreen.length; i++){
 		bulletsOnScreen[i].left += bulletsOnScreen[i].speedX;
 		bulletsOnScreen[i].top += bulletsOnScreen[i].speedY;
@@ -147,6 +148,12 @@ function keyDownHandler(e) {
 		case 32:
 			player.isShoot = true;
 			break;
+		case 39:
+			player.speedX = 20;
+			break;
+		case 37:
+			player.speedX = -20;
+			break;
 	}
 }
 	
@@ -155,6 +162,12 @@ function keyUpHandler(e) {
 		case 32:
 			player.isShoot = false;
 			frameShot = -1;
+			break;
+		case 39:
+			player.speedX = 0; 
+			break;
+		case 37:
+			player.speedX = 0;
 			break;
 	}
 }
