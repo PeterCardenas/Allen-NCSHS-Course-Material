@@ -8,20 +8,19 @@ var canvasContext;
 var fps = 30;
 var currFrame = 0;
 var frameShot = -1;
-
+var frameLastShot;
 var player;
 var playerImage = "player ship.png";
 var playerStartX;
 var playerStartY;
 var playerWidth = 30;
 var playerHeight = 40;
-var playerMaxSpeedX = 20;
+var playerMaxSpeedX = 10;
 	
 var playerBulletsOnScreen;
 var enemyBulletsOnScreen;
 var bulletWidth = 2;
 var bulletHeight = 5;
-
 var aliens;
 var aliensNumRows = 5;
 var aliensNumCols = 10;
@@ -124,12 +123,18 @@ function init() {
 	for(i = 0; i < barrierNumFrames; i++) {
 		barrierFrames.push("barrier f" + (i + 1) + ".png");
 	}
-	aliensWidth = (canvas.width - (aliensLeftSpace + aliensRightSpace) - (aliensSpaceX * (aliensNumCols - 1))) / aliensNumCols;
+	aliensWidth = (canvas.width - (aliensLeftSpace + aliensRightSpace) - (aliensSpaceX * (aliensNumCols - 1))) 
+
+/ aliensNumCols;
 	aliensHeight = aliensWidth;
 	for (i = 0; i < aliensNumRows; i++) {
 		aliens.push(new Array(0));
 		for (j = 0; j < aliensNumCols; j++) {
-			aliens[i].push(new Enemy(((i * aliensNumCols + j) % aliensNumCols) * (aliensWidth + aliensSpaceX) + aliensLeftSpace, Math.floor((i * aliensNumCols + j) / aliensNumCols) * (aliensHeight + aliensSpaceY) + aliensUpSpace, aliensWidth, aliensHeight, alien1Frames)); 
+			aliens[i].push(new Enemy(((i * aliensNumCols + j) % aliensNumCols) * (aliensWidth + 
+
+aliensSpaceX) + aliensLeftSpace, Math.floor((i * aliensNumCols + j) / aliensNumCols) * (aliensHeight + 
+
+aliensSpaceY) + aliensUpSpace, aliensWidth, aliensHeight, alien1Frames)); 
 		}
 	} 
 	setInterval(doFrame, 1000 / fps);
@@ -147,9 +152,13 @@ function draw() {
 	if(player.isShoot) {
 		if(frameShot == -1) {
 			frameShot = currFrame;
-			playerBulletsOnScreen.push(new Bullet(player.left + player.width / 2 - bulletWidth / 2, player.top, bulletWidth, bulletHeight, 'white'));
+			playerBulletsOnScreen.push(new Bullet(player.left + player.width / 2 - bulletWidth / 2, 
+
+player.top, bulletWidth, bulletHeight, 'white'));
 		} else if (((currFrame + fps) - frameShot) % (fps / 2) == 0) {
-			playerBulletsOnScreen.push(new Bullet(player.left + player.width / 2 - bulletWidth / 2, player.top, bulletWidth, bulletHeight, 'white'));	
+			playerBulletsOnScreen.push(new Bullet(player.left + player.width / 2 - bulletWidth / 2, 
+
+player.top, bulletWidth, bulletHeight, 'white'));	
 		}
 	}
 	for (i = 0; i < aliens.length; i++) {
@@ -174,11 +183,17 @@ function draw() {
 		}
 	});
 	aliens.forEach(function(item, index, array) {
-		item.forEach(function(item, index, array) {
-			if(!item.dead) {
-				item.draw();
-			}
-		});
+		if(item.length == 0) {
+			array.splice(index, 1);
+		} else {
+			item.forEach(function(item, index, array) {
+				if(item.dead) {
+					array.splice(index, 1);
+				} else {
+					item.draw();
+				}
+			});
+		}
 	});
 }
 function move() {
@@ -192,18 +207,22 @@ function move() {
 		item.left += item.speedX;
 		item.top += item.speedY;
 	});
-	if(currFrame % fps == 0) {
-		if (aliens[aliens.length - 1][aliens[aliens.length - 1].length - 1].left + aliens[aliens.length - 1][aliens[aliens.length - 1].length - 1].width + aliens[aliens.length - 1][aliens[aliens.length - 1].length - 1].speedX > canvas.width || aliens[0][0].left + aliens[0][0].speedX < 0) {
+	if(currFrame % Math.round(fps / 4) == 0) {
+		if (getRightmost(aliens).left + getRightmost(aliens.width) + getRightmost(aliens).speedX > 
+
+canvas.width || getLeftmost(aliens).left + getLeftmost(aliens).speedX < 0) {
 			aliens.forEach(function(item, index, array) {
 				item.forEach(function(item, index, array) {
 					item.top += item.speedY;
 					item.speedX *= -1;
+					item.changeFrame();
 				});
 			});
 		} else {
 			aliens.forEach(function(item, index, array) {
 				item.forEach(function(item, index, array) {
 					item.left += item.speedX;
+					item.changeFrame();
 				});
 			});
 		}
@@ -244,7 +263,9 @@ function keyUpHandler(e) {
 }
 	
 function collisionRect(rect1, rect2) {
-	return rect1.left < rect2.left + rect2.width && rect1.left + rect1.width > rect2.left && rect1.top < rect2.top + rect2.height && rect1.height + rect1.top > rect2.top;
+	return rect1.left < rect2.left + rect2.width && rect1.left + rect1.width > rect2.left && rect1.top < 
+
+rect2.top + rect2.height && rect1.height + rect1.top > rect2.top;
 }
   
 function colorRect(leftX, topY, width, height, drawColor) {
@@ -268,6 +289,27 @@ function moveNextIndex(array, index){
 	return index;
 }
 
+function getLeftmost(array) {
+	leftIndex = 0;
+	left = array[leftIndex][0].left;
+	array.forEach(function(item, index, array) {
+		if(item.length > 0 && item[0].left <= left) {
+			leftIndex = index;
+		}
+	});
+	return array[leftIndex][0];
+}
+
+function getRightmost(array) {
+	rightIndex = 0;
+	right = array[rightIndex][0].left + array[rightIndex][0].width;
+	array.forEach(function(item, index, array) {
+		if(item.length > 0 && item[item.length - 1].left + item[item.length - 1].width >= right) {
+			rightIndex = index;
+		}
+	});
+	return array[rightIndex][array[rightIndex].length - 1];
+}
 window.onload = init;
 </script>
 
