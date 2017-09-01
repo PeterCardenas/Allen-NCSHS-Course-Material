@@ -8,19 +8,32 @@ var canvasContext;
 var fps = 30;
 var currFrame = 0;
 var frameShot = -1;
+
 var player;
 var playerImage = "player ship.png";
-var playerStartX = 0;
-var playerStartY = 0;
-var playerWidth = 75;
-var playerHeight = 100;
+var playerStartX;
+var playerStartY;
+var playerWidth = 30;
+var playerHeight = 40;
+var playerMaxSpeedX = 20;
 	
-var bulletsOnScreen;
-var bulletWidth = 5;
-var bulletHeight = 20;
-var enemy1;
-var enemy1Frames;
-var enemy1NumFrames = 2;
+var playerBulletsOnScreen;
+var enemyBulletsOnScreen;
+var bulletWidth = 2;
+var bulletHeight = 5;
+
+var aliens;
+var aliensNumRows = 5;
+var aliensNumCols = 10;
+var aliensLeftSpace = 200;
+var aliensRightSpace = 200;
+var aliensUpSpace = 20;
+var aliensSpaceX = 10;
+var aliensSpaceY = 10;
+var aliensWidth = 5;
+var aliensHeight = 5;
+var alien1Frames;
+var alien1NumFrames = 2;
 	
 var barrier;
 var barrierFrames;
@@ -38,6 +51,12 @@ class SpaceShip {
 		this.isShoot = false;
 	}
 	draw() {
+		if(this.left < 0) {
+			this.left = 0;
+		}
+		if(this.left + this.width > canvas.width) {
+			this.left = canvas.width - this.width;
+		}
 		drawImage(this.left, this.top, this.width, this.height, this.currPic);
 	}
 	collisionDetect(obj) {
@@ -66,38 +85,53 @@ class Bullet {
 	}
 }
 class Enemy {
-	constructor(left, top, width, height, pictures) {
+	constructor(left, top, width, height, frames) {
 		this.tag = 'Enemy';
 		this.left = left;
 		this.top = top;
 		this.width = width;
 		this.height = height;
-		this.currPic = pictures[0];
-		this.speedX = 1;
-		this.speedY = 1;
+		this.frames = frames;
+		this.currFrame = frames[0];
+		this.speedX = 10;
+		this.speedY = 10;
+		this.dead = false;
 	}
 	draw() {
-		drawImage(this.left, this.top, this.width, this.height, currPic);
+		drawImage(this.left, this.top, this.width, this.height, this.currFrame);
 	}
 	collisionDetect(obj) {
 		return collisionRect(this, obj);
+	}
+	changeFrame() {
+		this.currFrame = this.frames[moveNextIndex(this.frames, this.frames.indexOf(this.currFrame))];
 	}
 }
 function init() {
 	canvas = document.getElementById('gameCanvas');
 	canvasContext = canvas.getContext('2d');
-	enemy1Frames = new Array(0);
+	alien1Frames = new Array(0);
 	barrierFrames = new Array(0);
+	playerBulletsOnScreen = new Array(0);
+	enemyBulletsOnScreen = new Array(0); 
+	aliens = new Array(0);
 	playerStartX = canvas.width / 2 - playerWidth / 2;
 	playerStartY = canvas.height - playerHeight;
 	player = new SpaceShip(playerStartX, playerStartY, playerWidth, playerHeight, playerImage);
-	for(i = 0; i < enemy1NumFrames; i++){
-		enemy1Frames.push("enemy 1 f" + (i + 1) + ".png");
+	for(i = 0; i < alien1NumFrames; i++){
+		alien1Frames.push("enemy 1 f" + (i + 1) + ".png");
 	}
 	for(i = 0; i < barrierNumFrames; i++) {
 		barrierFrames.push("barrier f" + (i + 1) + ".png");
 	}
-	bulletsOnScreen = new Array(0); 
+	aliensWidth = (canvas.width - (aliensLeftSpace + aliensRightSpace) - (aliensSpaceX * (aliensNumCols - 1))) / aliensNumCols;
+	aliensHeight = aliensWidth;
+	for (i = 0; i < aliensNumRows; i++) {
+		aliens.push(new Array(0));
+		for (j = 0; j < aliensNumCols; j++) {
+			aliens[i].push(new Enemy(((i * aliensNumCols + j) % aliensNumCols) * (aliensWidth + aliensSpaceX) + aliensLeftSpace, Math.floor((i * aliensNumCols + j) / aliensNumCols) * (aliensHeight + aliensSpaceY) + aliensUpSpace, aliensWidth, aliensHeight, alien1Frames)); 
+		}
+	} 
 	setInterval(doFrame, 1000 / fps);
 	window.addEventListener('keydown', keyDownHandler, false);
 	window.addEventListener('keyup', keyUpHandler, false);
@@ -108,39 +142,72 @@ function doFrame() {
 	draw();
 }
 function draw() {
+	colorRect(0, 0, canvas.width, canvas.height, 'black');
+	player.draw();
+	if(player.isShoot) {
+		if(frameShot == -1) {
+			frameShot = currFrame;
+			playerBulletsOnScreen.push(new Bullet(player.left + player.width / 2 - bulletWidth / 2, player.top, bulletWidth, bulletHeight, 'white'));
+		} else if (((currFrame + fps) - frameShot) % (fps / 2) == 0) {
+			playerBulletsOnScreen.push(new Bullet(player.left + player.width / 2 - bulletWidth / 2, player.top, bulletWidth, bulletHeight, 'white'));	
+		}
+	}
+	for (i = 0; i < aliens.length; i++) {
+		for (j = 0; j < aliens[i].length; j++) {
+			if (!aliens[i][j].dead) {
+				for (k = 0; k < playerBulletsOnScreen.length; k++) {
+					if (aliens[i][j].collisionDetect(playerBulletsOnScreen[k])) {
+						aliens[i][j].dead = true;
+						playerBulletsOnScreen[k].hit = true;
+					}
+				}
+			}
+		}
+	}
+	playerBulletsOnScreen.forEach(function(item, index, array) {
+		if(item.hit || item.top + item.height < 0) {
+			array.splice(index, 1);
+			i--;
+		}
+		else{
+			item.draw();
+		}
+	});
+	aliens.forEach(function(item, index, array) {
+		item.forEach(function(item, index, array) {
+			if(!item.dead) {
+				item.draw();
+			}
+		});
+	});
+}
+function move() {
 	currFrame++;
 	if(currFrame > fps) {
 		currFrame -= fps;	
 	}
 	player.left += player.speedX;
 	player.top += player.speedY;
-	for(i = 0; i < bulletsOnScreen.length; i++){
-		bulletsOnScreen[i].left += bulletsOnScreen[i].speedX;
-		bulletsOnScreen[i].top += bulletsOnScreen[i].speedY;
-	}
-	colorRect(0, 0, canvas.width, canvas.height, 'black');
-	player.draw();
-	if(player.isShoot) {
-		if(frameShot == -1) {
-			frameShot = currFrame;
-			bulletsOnScreen.push(new Bullet(player.left + player.width / 2 - bulletWidth / 2, player.top, bulletWidth, bulletHeight, 'white'));
-		} else if (((currFrame + fps) - frameShot) % (fps / 2) == 0) {
-			bulletsOnScreen.push(new Bullet(player.left + player.width / 2 - bulletWidth / 2, player.top, bulletWidth, bulletHeight, 'white'));	
+	playerBulletsOnScreen.forEach(function(item, index, array) {
+		item.left += item.speedX;
+		item.top += item.speedY;
+	});
+	if(currFrame % fps == 0) {
+		if (aliens[aliens.length - 1][aliens[aliens.length - 1].length - 1].left + aliens[aliens.length - 1][aliens[aliens.length - 1].length - 1].width + aliens[aliens.length - 1][aliens[aliens.length - 1].length - 1].speedX > canvas.width || aliens[0][0].left + aliens[0][0].speedX < 0) {
+			aliens.forEach(function(item, index, array) {
+				item.forEach(function(item, index, array) {
+					item.top += item.speedY;
+					item.speedX *= -1;
+				});
+			});
+		} else {
+			aliens.forEach(function(item, index, array) {
+				item.forEach(function(item, index, array) {
+					item.left += item.speedX;
+				});
+			});
 		}
 	}
-	//console.log(currFrame, frameShot);
-	for(i = 0; i < bulletsOnScreen.length; i++){
-		if(bulletsOnScreen[i].hit || bulletsOnScreen[i].top + bulletsOnScreen[i].height < 0) {
-			bulletsOnScreen.splice(i, 1);
-			i--;
-		}
-		else{
-			bulletsOnScreen[i].draw();
-		}
-	}
-}
-function move() {
-	
 }
 	
 function keyDownHandler(e) {
@@ -149,10 +216,10 @@ function keyDownHandler(e) {
 			player.isShoot = true;
 			break;
 		case 39:
-			player.speedX = 20;
+			player.speedX = playerMaxSpeedX;
 			break;
 		case 37:
-			player.speedX = -20;
+			player.speedX = -playerMaxSpeedX;
 			break;
 	}
 }
@@ -164,61 +231,20 @@ function keyUpHandler(e) {
 			frameShot = -1;
 			break;
 		case 39:
-			player.speedX = 0; 
+			if(player.speedX > 0) {
+				player.speedX = 0; 
+			}
 			break;
 		case 37:
-			player.speedX = 0;
+			if(player.speedX < 0) {
+				player.speedX = 0; 
+			}
 			break;
 	}
-}
-	
-function mouseMoveHandler(e){
-	var mousePos = calculateMousePos(e);
-	if(mousePos.x - player.width / 2 <= 0){
-		player.left = 0;
-	} else if (mousePos.x + player.width / 2 >= canvas.width){
-		player.left = canvas.width - player.width;
-	} else {
-		player.left = mousePos.x - player.width / 2;
-	}
-}
-function calculateMousePos(e) {
-	var rect = canvas.getBoundingClientRect();
-	var root = document.documentElement;
-	var mouseX = e.clientX - rect.left - root.scrollLeft;
-	var mouseY = e.clientY - rect.top - root.scrollTop;
-	return {
-		x : mouseX,
-		y : mouseY
-	};
 }
 	
 function collisionRect(rect1, rect2) {
-	if (rect2.left + rect2.width / 2 >= rect1.left && rect2.left + rect2.width / 2 <= rect1.left + rect1.width) {
-			if (rect2.top + rect2.height >= rect1.top) {
-				if (rect2.top + rect2.height - rect2.speedY < rect1.top) {
-					return 'top';
-				}
-			}
-			if (rect2.top <= rect1.top + rect1.height) {
-				if (rect2.top - rect2.speedY > rect1.top + rect1.height) {
-					return 'bottom';
-				}
-			}
-		}
-		if (rect2.top + rect2.height / 2 >= rect1.top && rect2.top + rect2.height / 2 <= rect1.top + rect1.height) {
-			if (rect2.left + rect2.width >= rect1.left) {
-				if (rect2.left + rect2.width - rect2.speedX < rect1.left) {
-					return 'left';
-				}
-			}
-			if (rect2.top <= rect1.top + rect1.height) {
-				if (rect2.left - rect2.speedX > rect1.left + rect1.width) {
-					return 'right';
-				}
-			}
-		}
-		return 'none';
+	return rect1.left < rect2.left + rect2.width && rect1.left + rect1.width > rect2.left && rect1.top < rect2.top + rect2.height && rect1.height + rect1.top > rect2.top;
 }
   
 function colorRect(leftX, topY, width, height, drawColor) {
@@ -232,6 +258,14 @@ function drawImage(left, top, width, height, image) {
 	drawing.onload = function() {
 		canvasContext.drawImage(drawing, left, top, width, height);
 	};
+}
+
+function moveNextIndex(array, index){
+	index++;
+	if(index >= array.length) {
+		index = 0;
+	}
+	return index;
 }
 
 window.onload = init;
